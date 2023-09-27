@@ -18,3 +18,5 @@ RUN npm run build
 
 # Define the command to start the application
 CMD ["npm", "start"]
+
+
