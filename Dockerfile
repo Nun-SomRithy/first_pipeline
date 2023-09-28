@@ -1,13 +1,28 @@
-# Use the base Nginx image
-FROM nginx:latest
+# Stage 1: Build the Node.js application
+FROM node:18-alpine AS builder
 
-# Copy the built React app to the Nginx document root
-COPY build/ /usr/share/nginx/html
+# Create and set the working directory in the container
+WORKDIR /app
 
-# Copy the Nginx configuration file
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy package.json and package-lock.json to the container first
+COPY package*.json ./
 
-# Expose port 80
+# Install Node.js dependencies
+RUN npm install
+
+# Copy the rest of your application code to the container
+COPY . .
+
+# Build the Next.js application
+RUN npm run build
+
+# Stage 2: Create the final image with Nginx
+FROM nginx:1.23.2
+
+# Copy the built application from the builder stage to Nginx's HTML directory
+COPY --from=builder /app/ /usr/share/nginx/html/
+
+# Expose port 80 for Nginx
 EXPOSE 80
 
 # Start Nginx
