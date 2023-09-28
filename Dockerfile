@@ -1,6 +1,6 @@
 
 # Use the official Nginx image as the base image
-FROM nginx:1.23.2 as build
+FROM nginx:1.23.2 
 
 # Install sudo
 RUN apt-get update && apt-get install -y sudo
