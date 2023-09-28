@@ -1,17 +1,37 @@
-# Stage 1: Build the Next.js application
-FROM node:14 AS build
+# Yser oficial nodejs runtime as a parent image
+FROM node:18-alpine AS builder
+
+# set app working directory
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
+
+#copy package.json and package-lock.json file to the container
+COPY package*.json ./
+
+# install dependencies the same npm i and install only production dependencies
+RUN npm ci --only=production
+
+# Copy the rest
 COPY . .
+
+# build app for production with minification
 RUN npm run build
 
-# Stage 2: Create the final image with Nginx
-FROM nginx:1.23.2
-COPY --from=build /app/out /usr/share/nginx/html
+# remove dev dependencies
+RUN npm prune --production
 
-# Expose port 80 for Nginx
-EXPOSE 80
+# using lightweight alpine image for final image
+FROM node:18-alpine
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# set app working directory /app
+WORKDIR /app
+
+# copy the app from builder stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+EXPOSE 3000
+
+# start the application
+CMD ["npm", "start"]
